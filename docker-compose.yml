@@ -8,6 +8,11 @@ services:
       mode: replicated
       replicas: 5
       endpoint_mode: vip
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+
     volumes:
       - ./RT_SiteConfig.pm:/opt/rt5/etc/RT_SiteConfig.pm:ro
       - ./msmtp/msmtp.conf:/etc/msmtprc:ro
@@ -44,6 +49,9 @@ services:
       nginx:
         condition: service_healthy
         restart: true
+      db:
+        condition: service_healthy
+        restart: true
     volumes:
       - ./RT_SiteConfig.pm:/opt/rt5/etc/RT_SiteConfig.pm:ro
       - ./msmtp/msmtp.conf:/etc/msmtprc:ro
@@ -51,8 +59,8 @@ services:
       - ./getmail/getmailrc:/getmail/getmailrc:ro
       - ./gpg/:/opt/rt5/var/data/gpg
       - ./smime/:/opt/rt5/var/data/smime
-      - ./crontab:/root/crontab:ro # needed so we can add it ro. Permissions are changed in startup script
-      - ./cron/:/cron
+      - ./cron/crontab:/root/crontab:ro # needed so we can add it ro. Permissions are changed in startup script
+      # - ./cron/:/cron
       - ./shredder/:/opt/rt5/var/data/RT-Shredder
       - /etc/localtime:/etc/localtime:ro
     # make the host available inside the image
@@ -66,7 +74,7 @@ services:
       context: nginx
     image: firefart/requesttracker:nginx-latest
     ports:
-      - "0.0.0.0:443:443"
+      - "0.0.0.0:8081:8081"
       - "127.0.0.1:8080:8080" # expose mailgate vhost to host
     # uncomment to enable debug mode
     # command: [nginx-debug, '-g', 'daemon off;']
@@ -74,14 +82,15 @@ services:
       rt:
         condition: service_healthy
         restart: true
-      dozzle:
-        condition: service_healthy
-        restart: true
-      pgadmin:
-        condition: service_healthy
-        restart: true
+      # dozzle:
+      #  condition: service_healthy
+      #  restart: true
+      #pgadmin:
+      #  condition: service_healthy
+      #  restart: true
     volumes:
       - ./nginx/certs/:/certs/:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./nginx/startup-scripts/:/docker-entrypoint.d/:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
@@ -129,12 +138,32 @@ services:
     networks:
       - net
 
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: rt
+      POSTGRES_USER: rt
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "rt"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - vol_db:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - net
+
 secrets:
   pgadmin_password:
     file: ./pgadmin_password.secret
 
 volumes:
   vol_pgadmin: {}
+  vol_db: {}
 
 networks:
   net:

@@ -96,6 +96,13 @@ RUN cd /src/rtir \
   && perl -I /src/rtir/lib Makefile.PL --defaultdeps \
   && make install
 
+RUN cd /src/ \
+  && git clone https://github.com/bestpractical/rt-authen-oauth2.git \
+  && cd ./rt-authen-oauth2.git \
+  && perl perl Makefile.PL \
+  && make \
+  && make install
+
 #############################################################################
 
 FROM perl:5.40.0-slim
