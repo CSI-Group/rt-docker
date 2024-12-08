@@ -14,6 +14,8 @@ services:
         restart: true
     volumes:
       - ./RT_SiteConfig.pm:/opt/rt5/etc/RT_SiteConfig.pm:ro
+      - ./RT/lib:/opt/rt5/local/lib:ro
+      - ./RT/html:/opt/rt5/local/html:ro
       - ./msmtp/msmtp.conf:/etc/msmtprc:ro
       - ./msmtp/:/msmtp:ro
       - ./getmail/getmailrc:/getmail/getmailrc:ro
