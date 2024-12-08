@@ -45,7 +45,7 @@ RUN groupadd -g 1000 rt && useradd -u 1000 -g 1000 -Ms /bin/bash -d /opt/rt5 rt
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
   && apt-get -q -y install --no-install-recommends \
   ca-certificates wget gnupg graphviz libssl3 zlib1g \
-  gpg dirmngr gpg-agent \
+  gpg dirmngr gpg-agent mc curl\
   libgd3 libexpat1 libpq5 w3m elinks links html2text lynx openssl libgd-dev
 
 # Download and extract RT
@@ -96,10 +96,12 @@ RUN cd /src/rtir \
   && perl -I /src/rtir/lib Makefile.PL --defaultdeps \
   && make install
 
+RUN cpanm --no-man-pages install Module::Install Net::OAuth2::Profile::WebServer
+
 RUN cd /src/ \
   && git clone https://github.com/bestpractical/rt-authen-oauth2.git \
-  && cd ./rt-authen-oauth2.git \
-  && perl perl Makefile.PL \
+  && cd ./rt-authen-oauth2 \
+  && perl Makefile.PL \
   && make \
   && make install
 
@@ -114,7 +116,7 @@ LABEL org.opencontainers.image.description="Request Tracker Docker Setup"
 # Install required packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get update \
   && apt-get -q -y install --no-install-recommends \
-  procps supervisor ca-certificates getmail6 wget curl gnupg graphviz libssl3 \
+  procps supervisor ca-certificates getmail6 wget curl mc gnupg graphviz libssl3 \
   zlib1g libgd3 libexpat1 libpq5 w3m elinks links html2text lynx openssl cron bash \
   libfcgi-bin \
   && apt-get clean \
