@@ -68,7 +68,7 @@ RUN mkdir -p /src \
 # Configure RT
 RUN cd /src/rt \
   # configure with all plugins and with the newly created user
-  && ./configure --with-db-type=Pg --enable-gpg --enable-gd --enable-graphviz --enable-smime --enable-externalauth --with-web-user=rt --with-web-group=rt --with-rt-group=rt --with-bin-owner=rt --with-libs-owner=rt
+  && ./configure --with-db-type=Pg --disable-gpg --enable-gd --enable-graphviz --disable-smime --enable-externalauth --with-web-user=rt --with-web-group=rt --with-rt-group=rt --with-bin-owner=rt --with-libs-owner=rt
 
 # install https support for cpanm
 RUN cpanm --no-man-pages install LWP::Protocol::https
@@ -134,7 +134,8 @@ COPY --from=msmtp-builder  /usr/local/share/locale /usr/local/share/locale
 COPY --from=builder /usr/local/lib/perl5 /usr/local/lib/perl5
 COPY --from=builder /opt/rt5 /opt/rt5
 # run a final dependency check if we copied all
-RUN perl /opt/rt5/sbin/rt-test-dependencies --with-pg --with-fastcgi --with-gpg --with-graphviz --with-gd
+RUN perl /opt/rt5/sbin/rt-test-dependencies --with-pg --with-fastcgi --with-graphviz --with-gd
+# --with-gpg
 
 # supervisord config
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
