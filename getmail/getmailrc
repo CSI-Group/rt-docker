@@ -1,0 +1,19 @@
+[retriever]
+type = SimpleIMAPSSLRetriever
+server = imap.yandex.ru
+username = csi.integ@csi-group.org
+password = abegmrnkyrtcudjp
+mailboxes = ("INBOX",)
+
+[destination]
+type = MDA_external
+path = /opt/rt5/bin/rt-mailgate
+user = rt
+group = rt
+# 8080 is the mailgate vhost
+arguments = ("--url", "http://nginx:8080/", "--queue", "general", "--action", "correspond",)
+
+[options]
+read_all = false
+delete = true
+verbose = 1
