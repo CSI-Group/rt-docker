@@ -3,7 +3,7 @@ services:
     build:
       context: .
     image: firefart/requesttracker:latest
-    restart: always
+    restart: unless-stopped
     deploy:
       mode: replicated
       replicas: 5
@@ -12,7 +12,6 @@ services:
       db:
         condition: service_healthy
         restart: true
-
     volumes:
       - ./RT_SiteConfig.pm:/opt/rt5/etc/RT_SiteConfig.pm:ro
       - ./msmtp/msmtp.conf:/etc/msmtprc:ro
@@ -32,7 +31,7 @@ services:
     build:
       context: .
     image: firefart/requesttracker:latest
-    restart: always
+    restart: unless-stopped
     # the cron daemon needs to run as root
     user: root
     command: ["/root/cron_entrypoint.sh"]
@@ -73,9 +72,10 @@ services:
     build:
       context: nginx
     image: firefart/requesttracker:nginx-latest
+    restart: unless-stopped
     ports:
-      - "0.0.0.0:8081:8081"
-      - "127.0.0.1:8080:8080" # expose mailgate vhost to host
+      - "8080:8081"
+      #- "127.0.0.1:8080:8080" # expose mailgate vhost to host
     # uncomment to enable debug mode
     # command: [nginx-debug, '-g', 'daemon off;']
     depends_on:
@@ -96,50 +96,9 @@ services:
     networks:
       - net
 
-  dozzle:
-    image: amir20/dozzle:latest
-    profiles:
-      - full
-    restart: always
-    healthcheck:
-      test: ["CMD", "/dozzle", "healthcheck"]
-      interval: 3s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-    environment:
-      - DOZZLE_BASE=${DOZZLE_BASE:-/logs}
-      - DOZZLE_NO_ANALYTICS=true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - net
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    profiles:
-      - full
-    restart: always
-    environment:
-      PGADMIN_LISTEN_ADDRESS: 0.0.0.0
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-root@root.com}
-      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/pgadmin_password
-      PGADMIN_DISABLE_POSTFIX: disable
-    healthcheck:
-      test: ["CMD", "wget", "-O", "-", "http://127.0.0.1:80/misc/ping"]
-      interval: 10s
-      timeout: 10s
-      start_period: 160s
-      retries: 3
-    secrets:
-      - pgadmin_password
-    volumes:
-      - vol_pgadmin:/var/lib/pgadmin
-    networks:
-      - net
-
   db:
     image: postgres:latest
+    restart: unless-stopped
     environment:
       POSTGRES_DB: rt
       POSTGRES_USER: rt
@@ -156,10 +115,6 @@ services:
       - "127.0.0.1:5432:5432"
     networks:
       - net
-
-secrets:
-  pgadmin_password:
-    file: ./pgadmin_password.secret
 
 volumes:
   vol_pgadmin: {}
